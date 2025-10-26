@@ -4,6 +4,8 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Sparkles, Zap, Shield, TrendingUp } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export default function LandingPage() {
   const { user, isLoaded } = useUser();
@@ -20,7 +22,9 @@ export default function LandingPage() {
   }, [isLoaded, user, router]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
+      <Header />
+      <main>
       {/* Hero Section */}
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
@@ -119,15 +123,9 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-700">
-        <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-          <p className="text-center text-sm text-slate-400">
-            © 2025 사주 분석 웹앱. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </main>
+      </main>
+      <Footer />
+    </div>
   );
 }
 
