@@ -46,13 +46,13 @@ export function Header() {
             ) : (
               <>
                 <Link
-                  href="/sign-in"
+                  href={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || "/sign-in"}
                   className="rounded-md border border-slate-600 px-4 py-2 text-sm text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
                 >
                   로그인
                 </Link>
                 <Link
-                  href="/sign-up"
+                  href={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL || "/sign-up"}
                   className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
                 >
                   회원가입
