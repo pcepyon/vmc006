@@ -4,8 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, CheckCircle2, Boxes, Database, LogOut, Server } from "lucide-react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
-import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 type SetupCommand = {
   id: string;
@@ -77,27 +76,26 @@ const backendBuildingBlocks = [
 
 export default function Home() {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const { user, isAuthenticated, isLoading, refresh } = useCurrentUser();
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
 
   const handleSignOut = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    await refresh();
+    await signOut();
     router.replace("/");
-  }, [refresh, router]);
+  }, [signOut, router]);
 
   const authActions = useMemo(() => {
-    if (isLoading) {
+    if (!isLoaded) {
       return (
         <span className="text-sm text-slate-300">세션 확인 중...</span>
       );
     }
 
-    if (isAuthenticated && user) {
+    if (user) {
       return (
         <div className="flex items-center gap-3 text-sm text-slate-200">
-          <span className="truncate">{user.email ?? "알 수 없는 사용자"}</span>
+          <span className="truncate">{user.primaryEmailAddress?.emailAddress ?? "알 수 없는 사용자"}</span>
           <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
@@ -121,20 +119,20 @@ export default function Home() {
     return (
       <div className="flex items-center gap-3 text-sm">
         <Link
-          href="/login"
+          href="/sign-in"
           className="rounded-md border border-slate-600 px-3 py-1 text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
         >
           로그인
         </Link>
         <Link
-          href="/signup"
+          href="/sign-up"
           className="rounded-md bg-slate-100 px-3 py-1 text-slate-900 transition hover:bg-white"
         >
           회원가입
         </Link>
       </div>
     );
-  }, [handleSignOut, isAuthenticated, isLoading, user]);
+  }, [handleSignOut, user, isLoaded]);
 
   const handleCopy = (command: string) => {
     navigator.clipboard.writeText(command);
