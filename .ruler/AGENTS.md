@@ -52,7 +52,6 @@ use following libraries for specific functionalities:
 ## Backend Layer (Hono + Next.js)
 
 - Next.js `app` 라우터에서 `src/app/api/[[...hono]]/route.ts` 를 통해 Hono 앱을 위임한다. 모든 HTTP 메서드는 `handle(createHonoApp())` 로 노출하며 `runtime = 'nodejs'` 로 Supabase service-role 키를 사용한다.
-- **API prefix rule**: choose ONE of `.basePath('/api')` or `app.route('/api', ...)` to prevent `/api/api/...` duplication.
 - `src/backend/hono/app.ts` 의 `createHonoApp` 은 싱글턴으로 관리하며 다음 빌딩블록을 순서대로 연결한다.
   1. `errorBoundary()` – 공통 에러 로깅 및 5xx 응답 정규화.
   2. `withAppContext()` – `zod` 기반 환경 변수 파싱, 콘솔 기반 logger, 설정을 `c.set` 으로 주입.
