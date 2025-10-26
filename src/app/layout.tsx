@@ -3,6 +3,8 @@ import './globals.css';
 import Providers from './providers';
 import { ClerkProvider } from '@clerk/nextjs';
 import { koKR } from '@clerk/localizations';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: '사주 분석 웹앱',
@@ -18,7 +20,13 @@ export default async function RootLayout({
     <ClerkProvider localization={koKR}>
       <html lang="ko" suppressHydrationWarning>
         <body className="antialiased font-sans">
-          <Providers>{children}</Providers>
+          <Providers>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <div className="flex-1">{children}</div>
+              <Footer />
+            </div>
+          </Providers>
         </body>
       </html>
     </ClerkProvider>

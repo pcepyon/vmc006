@@ -4,8 +4,6 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Sparkles, Zap, Shield, TrendingUp } from "lucide-react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 
 export default function LandingPage() {
   const { user, isLoaded } = useUser();
@@ -22,9 +20,7 @@ export default function LandingPage() {
   }, [isLoaded, user, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
-      <Header />
-      <main>
+    <main className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800">
       {/* Hero Section */}
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
@@ -124,8 +120,6 @@ export default function LandingPage() {
       </div>
 
       </main>
-      <Footer />
-    </div>
   );
 }
 
