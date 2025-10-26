@@ -1,7 +1,15 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useUser } from "@clerk/nextjs";
+import { useState } from 'react';
+import { useDebounce } from 'react-use';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { DashboardLayout } from '@/features/dashboard/components/DashboardLayout';
+import { SearchBar } from '@/features/dashboard/components/SearchBar';
+import { TestHistoryList } from '@/features/dashboard/components/TestHistoryList';
+import { EmptyState } from '@/features/dashboard/components/EmptyState';
+import { ErrorState } from '@/features/dashboard/components/ErrorState';
+import { useDashboard } from '@/features/dashboard/hooks/useDashboard';
+import { extractApiErrorMessage } from '@/lib/remote/api-client';
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -9,39 +17,84 @@ type DashboardPageProps = {
 
 export default function DashboardPage({ params }: DashboardPageProps) {
   void params;
-  const { user } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get('search') || '',
+  );
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  useDebounce(
+    () => setDebouncedQuery(searchQuery),
+    300,
+    [searchQuery],
+  );
+
+  const { data, isLoading, error, refetch } = useDashboard(
+    page,
+    debouncedQuery || undefined,
+  );
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+
+    const params = new URLSearchParams(searchParams);
+    if (query) {
+      params.set('search', query);
+    } else {
+      params.delete('search');
+    }
+    router.push(`/dashboard?${params.toString()}`);
+  };
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <ErrorState
+          error={{ message: extractApiErrorMessage(error) }}
+          onRetry={() => refetch()}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  const hasTests = data && data.tests.length > 0;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">대시보드</h1>
-        <p className="text-slate-500">
-          {user?.primaryEmailAddress?.emailAddress ?? "알 수 없는 사용자"} 님, 환영합니다.
-        </p>
-      </header>
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        <Image
-          alt="대시보드"
-          src="https://picsum.photos/seed/dashboard/960/420"
-          width={960}
-          height={420}
-          className="h-auto w-full object-cover"
+    <DashboardLayout>
+      <div className="space-y-6">
+        <header>
+          <h1 className="text-3xl font-bold">검사 이력</h1>
+          <p className="text-muted-foreground">
+            과거에 수행한 사주 분석 결과를 확인하세요
+          </p>
+        </header>
+
+        <SearchBar
+          value={searchQuery}
+          onChange={handleSearch}
+          isLoading={isLoading}
         />
+
+        {isLoading && !data ? (
+          <div className="space-y-4">
+            <div className="h-32 bg-muted animate-pulse rounded-lg" />
+            <div className="h-32 bg-muted animate-pulse rounded-lg" />
+            <div className="h-32 bg-muted animate-pulse rounded-lg" />
+          </div>
+        ) : hasTests ? (
+          <TestHistoryList
+            tests={data.tests}
+            pagination={data.pagination}
+            onPageChange={setPage}
+          />
+        ) : (
+          <EmptyState />
+        )}
       </div>
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">현재 세션</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Clerk 미들웨어가 JWT 토큰을 자동으로 검증합니다.
-          </p>
-        </article>
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">보안 체크</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            보호된 App Router 세그먼트로 라우팅되며, 로그인한 사용자만 접근할 수 있습니다.
-          </p>
-        </article>
-      </section>
-    </div>
+    </DashboardLayout>
   );
 }

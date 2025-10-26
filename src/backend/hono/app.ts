@@ -5,6 +5,7 @@ import { withClerk } from '@/backend/middleware/clerk';
 import { withSupabase } from '@/backend/middleware/supabase';
 import { registerExampleRoutes } from '@/features/example/backend/route';
 import { registerAuthRoutes } from '@/features/auth/backend/route';
+import { registerDashboardRoutes } from '@/features/dashboard/backend/route';
 import type { AppEnv } from '@/backend/hono/context';
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -31,6 +32,7 @@ export const createHonoApp = () => {
   // 5. 라우터 등록
   registerExampleRoutes(app);
   registerAuthRoutes(app);
+  registerDashboardRoutes(app);
 
   singletonApp = app;
 
