@@ -46,7 +46,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/dashboard/subscription"
+                  href="/subscription"
                   className="text-sm text-slate-400 hover:text-white transition"
                 >
                   구독 관리

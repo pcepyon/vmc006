@@ -54,7 +54,7 @@ export function Sidebar() {
             email={user.primaryEmailAddress?.emailAddress || ''}
             subscriptionTier={subscription.subscription_tier}
             remainingTests={subscription.remaining_tests}
-            onClick={() => router.push('/dashboard/subscription')}
+            onClick={() => router.push('/subscription')}
           />
         )}
       </div>
