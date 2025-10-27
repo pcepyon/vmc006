@@ -14,7 +14,7 @@ const isProtectedRoute = createRouteMatcher([
   '/analysis(.*)',
 ]);
 
-export default clerkMiddleware((auth, req) => {
+export default clerkMiddleware(async (auth, req) => {
   // 공개 라우트는 바로 통과
   if (isPublicRoute(req)) {
     return;
@@ -22,7 +22,7 @@ export default clerkMiddleware((auth, req) => {
 
   // 보호된 라우트에 대해서만 인증 확인
   if (isProtectedRoute(req)) {
-    auth.protect();
+    await auth.protect();
   }
 });
 
