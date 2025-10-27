@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description: 'AI 기반 사주 분석 서비스',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
