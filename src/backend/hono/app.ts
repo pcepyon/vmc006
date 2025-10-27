@@ -17,7 +17,7 @@ export const createHonoApp = () => {
     return singletonApp;
   }
 
-  const app = new Hono<AppEnv>();
+  const app = new Hono<AppEnv>().basePath('/api');
 
   // 1. 에러 바운더리
   app.use('*', errorBoundary());

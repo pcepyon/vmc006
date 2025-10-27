@@ -47,5 +47,5 @@ const dashboardRoutes = new Hono<AppEnv>()
   });
 
 export const registerDashboardRoutes = (app: Hono<AppEnv>) => {
-  app.route('/api', dashboardRoutes);
+  app.route('/', dashboardRoutes);
 };
