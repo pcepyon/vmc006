@@ -66,7 +66,7 @@ export function TestDetailPage({ test, onBack }: TestDetailPageProps) {
             </div>
             <div>
               <p className="text-muted-foreground mb-1">사용 모델</p>
-              <p className="font-medium text-xs">{test.model_used}</p>
+              <p className="font-medium text-xs">{test.ai_model}</p>
             </div>
           </div>
 

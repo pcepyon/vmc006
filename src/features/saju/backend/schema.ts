@@ -25,13 +25,12 @@ export const SajuTestResponseSchema = z.object({
   is_birth_time_unknown: z.boolean(),
   gender: z.enum(['male', 'female']),
   status: z.enum(['processing', 'completed', 'failed']),
-  model_used: z.string(),
+  ai_model: z.string(),
   summary_result: z.string().nullable(),
   full_result: z.string().nullable(),
   error_message: z.string().nullable(),
   created_at: z.string(),
   completed_at: z.string().nullable(),
-  updated_at: z.string(),
 })
 
 export type SajuTestResponse = z.infer<typeof SajuTestResponseSchema>

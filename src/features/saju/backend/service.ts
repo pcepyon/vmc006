@@ -89,7 +89,7 @@ export async function analyzeSaju(
       birth_time: data.birth_time || null,
       is_birth_time_unknown: data.is_birth_time_unknown,
       gender: data.gender,
-      model_used: modelName,
+      ai_model: modelName,
       status: 'processing',
     })
     .select()
