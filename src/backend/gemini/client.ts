@@ -20,9 +20,9 @@ export function getGeminiClient(): GoogleGenerativeAI {
 
 /**
  * 구독 티어에 따라 사용할 모델 선택
- * - free: gemini-pro (안정적인 기본 모델)
- * - pro: gemini-1.5-pro (고품질 분석, 긴 컨텍스트)
+ * - free: gemini-2.5-flash-lite (빠른 응답, 효율적인 비용)
+ * - pro: gemini-2.5-pro (최고급 분석, 향상된 기능)
  */
 export function getModelByTier(tier: 'free' | 'pro'): string {
-  return tier === 'pro' ? 'gemini-1.5-pro' : 'gemini-pro'
+  return tier === 'pro' ? 'gemini-2.5-pro' : 'gemini-2.5-flash-lite'
 }
