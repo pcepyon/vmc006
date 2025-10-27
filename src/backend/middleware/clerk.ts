@@ -1,13 +1,19 @@
 import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
 import type { MiddlewareHandler } from 'hono';
 import type { AppEnv } from '@/backend/hono/context';
+import { getAppConfig } from '@/backend/config';
 
 /**
  * Clerk JWT 검증 미들웨어
  * - Hono 컨텍스트에 Clerk 인증 정보 주입
  */
 export const withClerk = (): MiddlewareHandler<AppEnv> => {
-  return clerkMiddleware();
+  const config = getAppConfig();
+
+  return clerkMiddleware({
+    publishableKey: config.clerk.publishableKey,
+    secretKey: config.clerk.secretKey,
+  });
 };
 
 /**
