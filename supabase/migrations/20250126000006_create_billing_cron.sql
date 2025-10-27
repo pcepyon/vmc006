@@ -6,14 +6,21 @@
 -- CREATE EXTENSION IF NOT EXISTS pg_cron;
 -- CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- 기존 스케줄이 있으면 삭제
-SELECT cron.unschedule('recurring-payment-trigger');
+-- 기존 스케줄이 있으면 삭제 (없으면 무시)
+DO $$
+BEGIN
+  PERFORM cron.unschedule('recurring-payment-trigger');
+EXCEPTION
+  WHEN OTHERS THEN
+    -- 스케줄이 없으면 무시
+    NULL;
+END $$;
 
 -- 매일 UTC 17:00 (한국 시간 다음날 02:00)에 정기결제 API 호출
 SELECT cron.schedule(
-  'recurring-payment-trigger',
-  '0 17 * * *',  -- 매일 UTC 17:00
-  $$
+  job_name := 'recurring-payment-trigger',
+  schedule := '0 17 * * *',  -- 매일 UTC 17:00
+  command := $$
   SELECT net.http_post(
     url := 'https://vmc006.vercel.app/api/subscription/billing/cron',
     headers := jsonb_build_object(
@@ -31,5 +38,3 @@ SELECT cron.schedule(
 -- 2. ✅ X-Cron-Secret이 환경변수 CRON_SECRET_TOKEN 값과 일치하도록 설정되어 있습니다.
 -- 3. ⚠️  pg_cron과 pg_net 익스텐션은 Supabase Dashboard에서 수동으로 활성화해야 합니다.
 --    (Database -> Extensions 메뉴에서 활성화)
-
-COMMENT ON FUNCTION cron.schedule IS 'Supabase Cron Job: 매일 02:00에 정기결제 API 호출';
