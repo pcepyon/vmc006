@@ -21,7 +21,7 @@ export const useSubscriptionInfo = () => {
   return useQuery<SubscriptionInfo>({
     queryKey: subscriptionKeys.info(),
     queryFn: async () => {
-      const response = await apiClient.get('/subscription');
+      const response = await apiClient.get('/api/subscription');
       return response.data;
     },
   });
@@ -35,7 +35,7 @@ export const useConfirmBilling = () => {
 
   return useMutation<ConfirmBillingResponse, Error, ConfirmBillingRequest>({
     mutationFn: async (data) => {
-      const response = await apiClient.post('/subscription/billing/confirm', data);
+      const response = await apiClient.post('/api/subscription/billing/confirm', data);
       return response.data;
     },
     onSuccess: () => {
@@ -52,7 +52,7 @@ export const useCancelSubscription = () => {
 
   return useMutation<CancelSubscriptionResponse, Error, void>({
     mutationFn: async () => {
-      const response = await apiClient.post('/subscription/cancel');
+      const response = await apiClient.post('/api/subscription/cancel');
       return response.data;
     },
     onSuccess: () => {
@@ -69,7 +69,7 @@ export const useReactivateSubscription = () => {
 
   return useMutation<{ message: string; nextBillingDate: string }, Error, void>({
     mutationFn: async () => {
-      const response = await apiClient.post('/subscription/reactivate');
+      const response = await apiClient.post('/api/subscription/reactivate');
       return response.data;
     },
     onSuccess: () => {
