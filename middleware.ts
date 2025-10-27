@@ -1,5 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
+// 공개 라우트 패턴 정의
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+]);
+
 // 보호할 라우트 패턴 정의
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
@@ -7,10 +14,15 @@ const isProtectedRoute = createRouteMatcher([
   '/analysis(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
+  // 공개 라우트는 바로 통과
+  if (isPublicRoute(req)) {
+    return;
+  }
+
   // 보호된 라우트에 대해서만 인증 확인
   if (isProtectedRoute(req)) {
-    await auth.protect();
+    auth.protect();
   }
 });
 
