@@ -3,6 +3,7 @@
 import {
   useSubscriptionInfo,
   useCancelSubscription,
+  useReactivateSubscription,
 } from '@/features/subscription/hooks/useSubscription';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ export default function SubscriptionPage() {
   const { toast } = useToast();
   const { data: subscription, isLoading } = useSubscriptionInfo();
   const cancelMutation = useCancelSubscription();
+  const reactivateMutation = useReactivateSubscription();
 
   const handleUpgrade = () => {
     const customerKey = crypto.randomUUID();
@@ -50,6 +52,22 @@ export default function SubscriptionPage() {
       toast({
         title: '구독 취소 실패',
         description: error.message || '구독 취소 중 오류가 발생했습니다',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleReactivate = async () => {
+    try {
+      const result = await reactivateMutation.mutateAsync();
+      toast({
+        title: '구독이 재활성화되었습니다',
+        description: result.message,
+      });
+    } catch (error: any) {
+      toast({
+        title: '구독 재활성화 실패',
+        description: error.message || '구독 재활성화 중 오류가 발생했습니다',
         variant: 'destructive',
       });
     }
@@ -79,34 +97,69 @@ export default function SubscriptionPage() {
       {/* 현재 구독 정보 */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>현재 요금제</CardTitle>
+          <CardTitle>현재 구독 정보</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-2xl font-bold">{isFree ? '무료 (Free)' : 'Pro'}</p>
-              <p className="text-gray-600">
-                잔여 검사 횟수: {subscription.remainingTests}회
-              </p>
+          <div className="space-y-4">
+            {/* 요금제 정보 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">요금제</p>
+                <p className="text-2xl font-bold">{isFree ? '무료 (Free)' : 'Pro'}</p>
+              </div>
+              {isPro && (
+                <Badge variant={isActive ? 'default' : isCancelled ? 'secondary' : 'destructive'}>
+                  {isActive ? '활성' : isCancelled ? '해지 예정' : '만료'}
+                </Badge>
+              )}
             </div>
-            {isPro && (
-              <Badge variant={isActive ? 'default' : 'secondary'}>
-                {isActive ? '활성' : '해지 예정'}
-              </Badge>
+
+            {/* 검사 횟수 정보 */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">월 검사 횟수</p>
+                <p className="text-lg font-semibold">
+                  {isFree ? '최초 3회' : '월 10회'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">잔여 검사 횟수</p>
+                <p className="text-lg font-semibold">
+                  {subscription.remainingTests || 0}회
+                </p>
+              </div>
+            </div>
+
+            {/* Pro 구독 상세 정보 */}
+            {isPro && subscription.subscription && (
+              <div className="border-t pt-4 space-y-2">
+                {subscription.subscription.nextBillingDate && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">다음 결제일</span>
+                    <span className="text-sm font-medium">
+                      {subscription.subscription.nextBillingDate}
+                    </span>
+                  </div>
+                )}
+                {subscription.subscription.cardCompany && subscription.subscription.cardNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">등록된 카드</span>
+                    <span className="text-sm font-medium">
+                      {subscription.subscription.cardCompany} {subscription.subscription.cardNumber}
+                    </span>
+                  </div>
+                )}
+                {isCancelled && (
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">이용 만료일</span>
+                    <span className="text-sm font-medium text-red-600">
+                      {subscription.subscription.nextBillingDate}
+                    </span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
-          {isPro && subscription.subscription && (
-            <div className="border-t pt-4">
-              <p className="text-sm text-gray-600">
-                다음 결제일: {subscription.subscription.nextBillingDate}
-              </p>
-              <p className="text-sm text-gray-600">
-                카드 정보: {subscription.subscription.cardCompany}{' '}
-                {subscription.subscription.cardNumber}
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -166,7 +219,7 @@ export default function SubscriptionPage() {
         </Card>
       )}
 
-      {/* 해지 예정 안내 */}
+      {/* 해지 예정 안내 및 재활성화 */}
       {isPro && isCancelled && (
         <Card className="border-yellow-500">
           <CardHeader>
@@ -176,9 +229,21 @@ export default function SubscriptionPage() {
             <p className="text-gray-600 mb-4">
               {subscription.subscription?.nextBillingDate}까지 이용 가능합니다.
             </p>
-            <p className="text-sm text-gray-500">
-              빌링키가 삭제되어 재활성화할 수 없습니다. 다시 구독하려면 새로 신청해주세요.
+            <p className="text-sm text-gray-500 mb-4">
+              다음 결제일 전까지 구독을 재활성화할 수 있습니다.
             </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleReactivate}
+                disabled={reactivateMutation.isPending}
+                variant="default"
+              >
+                {reactivateMutation.isPending ? '처리 중...' : '구독 재활성화'}
+              </Button>
+              <p className="text-xs text-gray-500 flex items-center">
+                * 재활성화 시 다음 결제일에 정상 결제됩니다
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
