@@ -4,7 +4,7 @@
 
 이 문서는 Next.js 15 App Router 프로젝트에 토스 페이먼츠 정기결제(빌링키)를 연동하고, Supabase Cron을 이용한 자동 결제를 구현하는 방법을 설명합니다.
 
-**작성일**: 2025-10-26
+**작성일**: 2025-10-28 (API 개별 연동키 방식으로 수정)
 **프로젝트**: 사주 분석 웹앱
 **목적**: Pro 요금제 구독 결제 구현 (카드 결제만 지원)
 
@@ -13,7 +13,7 @@
 ## 연동 유형
 
 ### 1. SDK 연동
-- **패키지**: `@tosspayments/payment-widget-sdk` (결제 UI)
+- **패키지**: `@tosspayments/payment-sdk` (API 개별 연동)
 - **용도**: 빌링키 발급용 결제창 UI 제공
 - **주요 기능**:
   - 카드 정보 입력 UI
@@ -45,15 +45,15 @@
 ### 1. 토스 페이먼츠 SDK 설치
 
 ```bash
-npm install @tosspayments/payment-widget-sdk
+npm install @tosspayments/payment-sdk
 ```
 
 ### 2. 환경변수 설정
 
 ```env
-# 토스 페이먼츠 API Keys
-NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TOSS_SECRET_KEY=test_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# 토스 페이먼츠 API 개별 연동 Keys (결제위젯 키가 아님!)
+NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxx  # API 개별 연동 클라이언트 키
+TOSS_SECRET_KEY=test_sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxx              # API 개별 연동 시크릿 키
 
 # Supabase Cron 검증용 Secret Token
 CRON_SECRET_TOKEN=your-random-secret-token-here
@@ -149,9 +149,11 @@ CREATE INDEX idx_payments_paid_at ON public.payments(paid_at);
 
 1. [토스 페이먼츠 개발자센터](https://developers.tosspayments.com/) 접속
 2. 회원가입 및 로그인
-3. **내 개발정보** 메뉴에서 API Keys 확인:
+3. **내 개발정보** 메뉴에서 **API 개별 연동 키** 확인:
    - **클라이언트 키** (Client Key): `test_ck_` 또는 `live_ck_`
    - **시크릿 키** (Secret Key): `test_sk_` 또는 `live_sk_`
+
+**중요**: 결제위젯 연동키(`test_gck_`)가 아닌 **API 개별 연동키**(`test_ck_`)를 사용해야 합니다.
 
 ### 2. 자동결제(빌링) 계약
 
@@ -241,8 +243,8 @@ export default function SubscriptionPage() {
 ```typescript
 'use client'
 
-import { loadPaymentWidget } from '@tosspayments/payment-widget-sdk'
-import { useSearchParams } from 'next/navigation'
+import { loadTossPayments } from '@tosspayments/payment-sdk'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
 
@@ -250,35 +252,34 @@ const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
 
 export default function BillingPage() {
   const { user } = useUser()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const customerKey = searchParams.get('customerKey')
-  const paymentWidgetRef = useRef<any>(null)
+  const tossPaymentsRef = useRef<any>(null)
 
   useEffect(() => {
     if (!customerKey || !user) return
 
-    const initializeWidget = async () => {
-      const paymentWidget = await loadPaymentWidget(clientKey, customerKey)
-      paymentWidgetRef.current = paymentWidget
-
-      // 빌링키 발급 UI 렌더링
-      await paymentWidget.renderPaymentMethods('#payment-widget', {
-        value: 0, // 빌링키 발급은 금액 0원
-      })
+    const initializeTossPayments = async () => {
+      const tossPayments = await loadTossPayments(clientKey)
+      tossPaymentsRef.current = tossPayments
     }
 
-    initializeWidget()
+    initializeTossPayments()
   }, [customerKey, user])
 
   const handleIssueBillingKey = async () => {
-    if (!paymentWidgetRef.current) return
+    if (!tossPaymentsRef.current || !customerKey) return
 
     try {
+      const billing = tossPaymentsRef.current.billing
+
       // 빌링키 발급 요청
-      await paymentWidgetRef.current.requestBillingAuth({
+      await billing.requestBillingAuth({
         method: 'CARD',
         successUrl: `${window.location.origin}/subscription/billing/success?customerKey=${customerKey}`,
         failUrl: `${window.location.origin}/subscription/billing/fail`,
+        customerKey: customerKey,
         customerEmail: user?.primaryEmailAddress?.emailAddress,
         customerName: user?.fullName || user?.username,
       })
@@ -298,15 +299,20 @@ export default function BillingPage() {
         ⚠️ 테스트 모드: 실제 결제가 발생하지 않습니다.
       </p>
 
-      {/* 결제 위젯 렌더링 영역 */}
-      <div id="payment-widget" className="mb-6" />
+      <div className="p-6 border rounded-lg bg-gray-50">
+        <h2 className="text-lg font-semibold mb-4">결제 정보</h2>
+        <div className="space-y-2 mb-6">
+          <p className="text-sm text-gray-600">고객 이메일: {user?.primaryEmailAddress?.emailAddress}</p>
+          <p className="text-sm text-gray-600">고객명: {user?.fullName || user?.username}</p>
+        </div>
 
-      <button
-        onClick={handleIssueBillingKey}
-        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
-      >
-        카드 등록하기
-      </button>
+        <button
+          onClick={handleIssueBillingKey}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+        >
+          카드 등록하기
+        </button>
+      </div>
     </div>
   )
 }
@@ -878,37 +884,42 @@ export async function POST(req: Request) {
 
 ## 주의사항 및 알려진 이슈
 
-### 1. 빌링키 발급 제한
+### 1. SDK 선택 주의
+- **Payment SDK** (`@tosspayments/payment-sdk`): API 개별 연동키 사용, 빌링/정기결제용
+- **Payment Widget SDK** (`@tosspayments/payment-widget-sdk`): 결제위젯 연동키 사용, 일반 결제용
+- 빌링키 발급에는 반드시 Payment SDK를 사용해야 함
+
+### 2. 빌링키 발급 제한
 
 - **자동결제 계약 필요**: 토스 페이먼츠와 별도 계약 없이는 빌링키 발급 불가
 - **빌링키 조회 불가**: 한 번 발급된 빌링키는 다시 조회할 수 없으므로 DB에 안전하게 저장 필수
 - **빌링키 삭제 API 없음**: 토스는 빌링키 삭제 API를 제공하지 않으므로 DB에서 직접 관리
 
-### 2. 테스트 환경 주의사항
+### 3. 테스트 환경 주의사항
 
 - 테스트 환경에서는 카드 BIN(앞 6자리)만 맞으면 테스트 가능
 - 실제 카드 정보를 입력해도 돈이 출금되지 않음
 - 프로덕션에서도 테스트 모드로 운영하려면 `test_` 키 사용
 
-### 3. 정기결제 타이밍
+### 4. 정기결제 타이밍
 
 - 정기결제 승인은 최대 30초 소요 가능
 - Supabase Cron의 HTTP 요청 타임아웃을 30000ms로 설정 필요
 - 다수의 구독 건이 있을 경우 Cron 작업이 길어질 수 있으므로 배치 처리 고려
 
-### 4. Supabase Cron 시간대
+### 5. Supabase Cron 시간대
 
 - Supabase Cron은 UTC 시간 기준
 - 한국 시간 02:00는 UTC 17:00 (전날)
 - Cron 표현식: `0 17 * * *` (매일 UTC 17:00 = 한국 시간 다음날 02:00)
 
-### 5. Secret Key 보안
+### 6. Secret Key 보안
 
 - `TOSS_SECRET_KEY`는 절대 클라이언트에 노출하면 안 됨
 - 빌링키 발급 API는 서버에서만 호출
 - Basic Auth 인코딩 시 `{secretKey}:` 형식 (콜론 포함) 주의
 
-### 6. 결제 실패 처리
+### 7. 결제 실패 처리
 
 - 카드 한도 초과, 카드 정지 등으로 결제 실패 가능
 - 실패 시 즉시 구독 해지 정책 (요구사항에 따름)
@@ -933,7 +944,7 @@ export async function POST(req: Request) {
 
 ### Phase 3: 빌링키 발급 UI 구현 (1시간)
 
-1. `@tosspayments/payment-widget-sdk` 설치
+1. `@tosspayments/payment-sdk` 설치
 2. 구독 페이지 UI 생성
 3. 빌링키 발급 페이지 생성
 4. 성공 페이지 생성
@@ -981,6 +992,8 @@ export async function POST(req: Request) {
 
 ### 공식 문서
 - [토스 페이먼츠 개발자센터](https://docs.tosspayments.com/)
+- [Payment SDK 문서](https://docs.tosspayments.com/sdk/v2/js)
+- [API Keys 가이드](https://docs.tosspayments.com/reference/using-api/api-keys)
 - [자동결제(빌링) 이해하기](https://docs.tosspayments.com/guides/v2/billing)
 - [자동결제(빌링) API 연동하기](https://docs.tosspayments.com/guides/v2/billing/integration-api)
 - [Webhook 이벤트](https://docs.tosspayments.com/reference/using-api/webhook-events)
@@ -1013,8 +1026,8 @@ export async function POST(req: Request) {
 
 ---
 
-**문서 버전**: 1.0
-**최종 업데이트**: 2025-10-26
+**문서 버전**: 2.0
+**최종 업데이트**: 2025-10-28
 
 **미확정 사항**:
 - Pro 요금제 가격 (예시: 9,900원, 실제 금액으로 변경 필요)

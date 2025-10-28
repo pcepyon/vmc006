@@ -22,32 +22,25 @@ function BillingPageContent() {
   const { toast } = useToast();
   const customerKey = searchParams.get('customerKey');
 
-  const { paymentWidget, isLoading, error, requestBillingAuth } = useTossPayments(
-    customerKey || undefined,
-  );
+  const { tossPayments, isLoading, error, requestBillingAuth } = useTossPayments();
 
-  // 토스 위젯 렌더링
-  useEffect(() => {
-    if (!paymentWidget) return;
-
-    const renderWidget = async () => {
-      try {
-        await paymentWidget.renderPaymentMethods('#payment-widget', {
-          value: 0, // 빌링키 발급은 금액 0원
-        });
-      } catch (err) {
-        console.error('Widget render error:', err);
-      }
-    };
-
-    renderWidget();
-  }, [paymentWidget]);
+  // API 개별 연동 방식에서는 위젯 렌더링이 필요 없음
+  // 버튼 클릭 시 바로 결제창 호출
 
   const handleIssueBillingKey = async () => {
-    if (!paymentWidget || !customerKey) return;
+    if (!tossPayments || !customerKey) {
+      toast({
+        title: '오류',
+        description: 'customerKey가 필요합니다.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
+      // API 개별 연동 방식으로 빌링키 발급 요청
       await requestBillingAuth({
+        customerKey,
         successUrl: `${window.location.origin}/subscription/billing/success?customerKey=${customerKey}`,
         failUrl: `${window.location.origin}/subscription/billing/fail`,
         customerEmail: user?.primaryEmailAddress?.emailAddress,
@@ -93,9 +86,18 @@ function BillingPageContent() {
           </p>
         </CardHeader>
         <CardContent>
-          <div id="payment-widget" className="mb-6" />
+          <div className="space-y-4 mb-6">
+            <p className="text-sm text-muted-foreground">
+              버튼을 클릭하면 토스페이먼츠 결제창이 열립니다.
+              카드 정보를 입력하여 정기결제를 위한 빌링키를 발급받으세요.
+            </p>
+          </div>
 
-          <Button onClick={handleIssueBillingKey} className="w-full">
+          <Button
+            onClick={handleIssueBillingKey}
+            className="w-full"
+            disabled={!tossPayments || !customerKey}
+          >
             카드 등록하기
           </Button>
         </CardContent>
