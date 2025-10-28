@@ -61,27 +61,26 @@ export const useTossPayments = () => {
         customerName: params.customerName,
       });
 
-      // requestBillingAuth가 직접 TossPayments 객체에 있음
+      // SDK v1 패턴 확인: requestBillingAuth가 직접 TossPayments 객체에 있는지 확인
       if (!tossPaymentsRef.current.requestBillingAuth) {
         console.error('TossPayments structure:', tossPaymentsRef.current);
         console.error('Available methods:', Object.keys(tossPaymentsRef.current));
         throw new Error('requestBillingAuth method not found. Check if the SDK is loaded correctly.');
       }
 
-      // SDK가 파라미터를 다르게 받을 수 있으므로 여러 방법 시도
+      // SDK v1: 첫 번째 파라미터는 결제 수단, 두 번째는 옵션 객체
       const billingAuthParams = {
-        method: 'CARD',
+        customerKey: params.customerKey,
         successUrl: params.successUrl,
         failUrl: params.failUrl,
-        customerKey: params.customerKey,
         customerEmail: params.customerEmail,
         customerName: params.customerName,
       };
 
-      console.log('Calling requestBillingAuth with:', billingAuthParams);
+      console.log('Calling tossPayments.requestBillingAuth with method: "카드" and params:', billingAuthParams);
 
-      // 빌링키 발급 요청 - TossPayments 객체에서 직접 호출
-      await tossPaymentsRef.current.requestBillingAuth(billingAuthParams);
+      // ✅ SDK v1 패턴: 첫 번째 파라미터로 '카드', 두 번째로 옵션 객체
+      await tossPaymentsRef.current.requestBillingAuth('카드', billingAuthParams);
 
       console.log('Billing auth request sent successfully');
     } catch (error: any) {
