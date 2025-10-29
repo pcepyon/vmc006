@@ -5,6 +5,7 @@
  */
 
 import { failure, success, type HandlerResult } from '@/backend/http/response';
+import { fetchWrapper } from '@/backend/http/fetch-wrapper';
 
 const TOSS_API_BASE = 'https://api.tosspayments.com';
 
@@ -49,7 +50,7 @@ export const chargeBillingKey = async (
   const auth = Buffer.from(`${secretKey}:`).toString('base64');
 
   try {
-    const response = await fetch(`${TOSS_API_BASE}/v1/billing/${billingKey}`, {
+    const response = await fetchWrapper(`${TOSS_API_BASE}/v1/billing/${billingKey}`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${auth}`,

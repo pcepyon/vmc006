@@ -43,6 +43,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# playwright
+playwright-report/
+test-results/
+
+# repomix
+repomix-output.*
 
 # START Ruler Generated Files
 /.codex/config.toml

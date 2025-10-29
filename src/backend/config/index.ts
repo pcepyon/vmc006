@@ -10,6 +10,13 @@ const envSchema = z.object({
 
 let cachedConfig: AppConfig | null = null;
 
+/**
+ * 테스트 환경에서 캐시를 초기화합니다.
+ */
+export const resetConfigCache = () => {
+  cachedConfig = null;
+};
+
 export const getAppConfig = (): AppConfig => {
   if (cachedConfig) {
     return cachedConfig;

@@ -1,5 +1,6 @@
 import { failure, success, type HandlerResult } from '@/backend/http/response';
 import { subscriptionErrorCodes, type SubscriptionServiceError } from './error';
+import { fetchWrapper } from '@/backend/http/fetch-wrapper';
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || '';
 const TOSS_API_BASE = 'https://api.tosspayments.com';
@@ -25,7 +26,7 @@ export const issueBillingKey = async (
   customerKey: string,
 ): Promise<HandlerResult<TossBillingData, SubscriptionServiceError, unknown>> => {
   try {
-    const response = await fetch(`${TOSS_API_BASE}/v1/billing/authorizations/issue`, {
+    const response = await fetchWrapper(`${TOSS_API_BASE}/v1/billing/authorizations/issue`, {
       method: 'POST',
       headers: {
         Authorization: getBasicAuthHeader(),
@@ -70,7 +71,7 @@ export const chargeBilling = async (
   orderName: string,
 ): Promise<HandlerResult<any, SubscriptionServiceError, unknown>> => {
   try {
-    const response = await fetch(`${TOSS_API_BASE}/v1/billing/${billingKey}`, {
+    const response = await fetchWrapper(`${TOSS_API_BASE}/v1/billing/${billingKey}`, {
       method: 'POST',
       headers: {
         Authorization: getBasicAuthHeader(),
